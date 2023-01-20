@@ -21,14 +21,17 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 def main(args, configs):
     print("Prepare training ...")
 
-    preprocess_config, model_config, train_config = configs
+    preprocess_config, fake_preprocess_config, model_config, train_config = configs
 
     # Get dataset
     dataset = Dataset(
         "train.txt", preprocess_config, train_config, sort=True, drop_last=True
     )
+    fake_dataset = Dataset(
+        "train.txt", fake_preprocess_config, train_config, sort=True, drop_last=True
+    )
     batch_size = train_config["optimizer"]["batch_size"]
-    group_size = 4  # Set this larger than 1 to enable sorting in Dataset
+    group_size = 1  # Set this larger than 1 to enable sorting in Dataset
     assert batch_size * group_size < len(dataset)
     loader = DataLoader(
         dataset,
@@ -36,10 +39,15 @@ def main(args, configs):
         shuffle=True,
         collate_fn=dataset.collate_fn,
     )
-
+    fake_loader = DataLoader(
+        fake_dataset,
+        batch_size=batch_size * group_size,
+        shuffle=True,
+        collate_fn=fake_dataset.collate_fn,
+    )
     # Prepare model
     model, optimizer = get_model(args, configs, device, train=True)
-    model = nn.DataParallel(model)
+    # model = nn.DataParallel(model)
     num_param = get_param_num(model)
     Loss = FastSpeech2Loss(preprocess_config, model_config).to(device)
     print("Number of FastSpeech2 Parameters:", num_param)
@@ -74,13 +82,13 @@ def main(args, configs):
 
     while True:
         inner_bar = tqdm(total=len(loader), desc="Epoch {}".format(epoch), position=1)
-        for batchs in loader:
-            for batch in batchs:
+        for batchs, fake_batchs in zip(loader, fake_loader):
+            for batch, fake_batch in zip(batchs, fake_batchs):
                 batch = to_device(batch, device)
-
+                fake_batch = to_device(fake_batch, device)
                 # Forward
                 output = model(*(batch[2:]))
-
+                fake_output = model(*(fake_batch[2:]))
                 # Cal Loss
                 losses = Loss(batch, output)
                 total_loss = losses[0]
@@ -180,6 +188,13 @@ if __name__ == "__main__":
         help="path to preprocess.yaml",
     )
     parser.add_argument(
+        "-fp",
+        "--fake_preprocess_config",
+        type=str,
+        required=True,
+        help="path to fake_preprocess.yaml",
+    )
+    parser.add_argument(
         "-m", "--model_config", type=str, required=True, help="path to model.yaml"
     )
     parser.add_argument(
@@ -191,8 +206,11 @@ if __name__ == "__main__":
     preprocess_config = yaml.load(
         open(args.preprocess_config, "r"), Loader=yaml.FullLoader
     )
+    fake_preprocess_config = yaml.load(
+        open(args.fake_preprocess_config, "r"), Loader=yaml.FullLoader
+    )
     model_config = yaml.load(open(args.model_config, "r"), Loader=yaml.FullLoader)
     train_config = yaml.load(open(args.train_config, "r"), Loader=yaml.FullLoader)
-    configs = (preprocess_config, model_config, train_config)
+    configs = (preprocess_config, fake_preprocess_config, model_config, train_config)
 
     main(args, configs)

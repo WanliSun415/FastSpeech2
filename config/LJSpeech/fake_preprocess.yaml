@@ -4,7 +4,7 @@ path:
   corpus_path: "C:/Users/swl/projects/LJSpeech-1.1"
   lexicon_path: "lexicon/librispeech-lexicon.txt"
   raw_path: "./raw_data/LJSpeech"
-  preprocessed_path: "./preprocessed_data/LJSpeech/ORIGINAL"
+  preprocessed_path: "./preprocessed_data/LJSpeech/TACOTRON2"
 
 preprocessing:
   val_size: 512
