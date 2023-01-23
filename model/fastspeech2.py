@@ -39,9 +39,12 @@ class FastSpeech2(nn.Module):
                 n_speaker,
                 model_config["transformer"]["encoder_hidden"],
             )
+        self.energy_linear = nn.Linear(preprocess_config["preprocessing"]["mel"]["n_mel_channels"], 1)
 
     def forward(
         self,
+        ids,
+        raw_texts,
         speakers,
         texts,
         src_lens,
@@ -96,7 +99,16 @@ class FastSpeech2(nn.Module):
 
         postnet_output = self.postnet(output) + output
 
+        mel_energy = self.energy_linear(output)
+        mel_energy = mel_energy.squeeze(2)
+        mel_energy = mel_energy.sum(dim=1)
+        p_energy = p_predictions.sum(dim=1)
+        e_energy = e_predictions.sum(dim=1)
+        log_d_energy = log_d_predictions.sum(dim=1)
+        energy = mel_energy + p_energy + e_energy + log_d_energy
+
         return (
+            energy,
             output,
             postnet_output,
             p_predictions,

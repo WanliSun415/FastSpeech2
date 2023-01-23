@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 
 from utils.model import get_model, get_vocoder
 from utils.tools import to_device, log, synth_one_sample
-from model import FastSpeech2Loss
+from model import FastSpeech2Loss, ContrastiveRegressionLoss
 from dataset import Dataset
 
 
@@ -84,6 +84,55 @@ def evaluate(model, step, configs, logger=None, vocoder=None):
         )
 
     return message
+
+
+def validate(model, configs, epoch):
+    preprocess_config, fake_preprocess_config, _, train_config = configs
+    model.eval()
+    # Get dataset
+    dataset = Dataset(
+        "val.txt", preprocess_config, train_config, sort=False, drop_last=False
+    )
+    fake_dataset = Dataset(
+        "val.txt", fake_preprocess_config, train_config, sort=False, drop_last=False
+    )
+    batch_size = train_config["optimizer"]["batch_size"]
+    loader = DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        collate_fn=dataset.collate_fn,
+    )
+    fake_loader = DataLoader(
+        fake_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        collate_fn=fake_dataset.collate_fn,
+    )
+    Loss = ContrastiveRegressionLoss()
+    # Evaluation
+    loss_sums = [0 for _ in range(3)]
+    for batchs, fake_batchs in zip(loader, fake_loader):
+        for batch, fake_batch in zip(batchs, fake_batchs):
+            batch = to_device(batch, device)
+            fake_batch = to_device(fake_batch, device)
+            with torch.no_grad():
+                # Forward
+                output = model(*(batch))
+                fake_output = model(*(fake_batch))
+                # Cal Loss
+                # pos_losses = Loss(batch, output)
+                # NEG_losses = Loss(batch, output)
+
+                loss_sums[0] += Loss(-output[0]).item()
+                loss_sums[1] += Loss(fake_output[0]).item()
+                loss_sums[2] += (loss_sums[0] + loss_sums[1]) / 2
+
+    loss_means = [loss_sum / len(dataset) for loss_sum in loss_sums]
+
+    model.train()
+    print("Validation average loss in epoch {}: {:9f}, positive loss: {:9f}, negative loss {:9f} ".format(epoch, loss_means[2], loss_means[0], loss_means[1]))
+    return loss_means
 
 
 if __name__ == "__main__":
