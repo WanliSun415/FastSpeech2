@@ -88,6 +88,8 @@ def main(args, configs):
     with open(os.path.join(train_config['path']['result_path'], "valid_loss.json"), 'w') as fp:
         pass
 
+    pos_energy = []
+    neg_energy = []
     while True:
         inner_bar = tqdm(total=len(loader), desc="Epoch {}".format(epoch), position=1)
         epoch_loss = 0
@@ -95,6 +97,7 @@ def main(args, configs):
         neg_epoch_loss = 0
         train_loss_json = {}
         val_loss_json = {}
+
         for batchs, fake_batchs in zip(loader, fake_loader):
             for batch, fake_batch in zip(batchs, fake_batchs):
                 batch = to_device(batch, device)
@@ -105,6 +108,8 @@ def main(args, configs):
                 # Cal Loss
                 # losses = Loss(batch, output)
                 # total_loss = losses[0]
+                pos_energy += output[0].data.cpu().tolist()
+                neg_energy += fake_output[0].data.cpu().tolist()
                 pos_loss = Loss(-output[0])
                 neg_loss = Loss(fake_output[0])
                 total_loss = pos_loss + neg_loss
@@ -182,10 +187,7 @@ def main(args, configs):
                             "model": model.module.state_dict(),
                             "optimizer": optimizer._optimizer.state_dict(),
                         },
-                        os.path.join(
-                            train_config["path"]["ckpt_path"],
-                            "{}.pth.tar".format(step),
-                        ),
+                        os.path.join(train_config["path"]["ckpt_path"], "{}.pth.tar".format(step),),
                     )
 
                 if step == total_step:
@@ -195,11 +197,19 @@ def main(args, configs):
 
             inner_bar.update(1)
 
-        val_epoch_loss = validate(model, configs, epoch)
-        train_loss_json[str(epoch)] = {"epoch_loss": epoch_loss / len(dataset), "pos_epoch_loss": pos_epoch_loss / len(dataset),
-                                       "neg_epoch_loss": neg_epoch_loss / len(dataset)}
-        val_loss_json[str(epoch)] = {"epoch_loss": val_epoch_loss[2], "pos_epoch_loss": val_epoch_loss[0],
-                                       "neg_epoch_loss": val_epoch_loss[1]}
+        train_loss_json[str(epoch)] = {"epoch_loss": epoch_loss / len(dataset),
+                                       "pos_epoch_loss": pos_epoch_loss / len(dataset),
+                                       "neg_epoch_loss": neg_epoch_loss / len(dataset),
+                                       "pos_energy": pos_energy[-512:],
+                                       "neg_energy": neg_energy[-512:]}
+        pos_energy = []
+        neg_energy = []
+        val_epoch_loss, val_pos_energy, val_neg_energy = validate(model, configs, epoch)
+        val_loss_json[str(epoch)] = {"epoch_loss": val_epoch_loss[2],
+                                     "pos_epoch_loss": val_epoch_loss[0],
+                                     "neg_epoch_loss": val_epoch_loss[1],
+                                     "pos_energy": val_pos_energy,
+                                     "neg_energy": val_neg_energy}
 
         load_epoch_loss(train_loss_json, os.path.join(train_config['path']['result_path'], "train_loss.json"))
         load_epoch_loss(val_loss_json, os.path.join(train_config['path']['result_path'], "valid_loss.json"))

@@ -1,9 +1,11 @@
+import sys
 import json
 import os
 import collections
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import MultipleLocator
+import numpy as np
 matplotlib.use('TKAgg')
 
 
@@ -87,17 +89,47 @@ def draw_epoch_loss(path):
         pos_epoch_loss = []
         neg_epoch_loss = []
         epoch = []
+        pos_energy_per_epoch = []
+        neg_energy_per_epoch = []
         for i in range(len(od)):
             epoch_loss.append(od[i + 1]["epoch_loss"])
             pos_epoch_loss.append(od[i + 1]["pos_epoch_loss"])
             neg_epoch_loss.append(od[i + 1]["neg_epoch_loss"])
             epoch.append(i + 1)
-    return [epoch_loss, pos_epoch_loss, neg_epoch_loss], epoch
+            pos_energy_per_epoch.append(od[i + 1]["pos_energy"])
+            neg_energy_per_epoch.append(od[i + 1]["neg_energy"])
+    return [epoch_loss, pos_epoch_loss, neg_epoch_loss], epoch, pos_energy_per_epoch, neg_energy_per_epoch
+
+
+def draw_hist(pos_energy_per_epoch, neg_energy_per_epoch, i, path):
+    bins = np.linspace(min(pos_energy_per_epoch + neg_energy_per_epoch),
+                       max(pos_energy_per_epoch + neg_energy_per_epoch), 30)
+    fig, ax = plt.subplots()
+    ax.hist(pos_energy_per_epoch, bins, alpha=0.5, label='real data')
+    ax.hist(neg_energy_per_epoch, bins, alpha=0.5, label='fake data')
+    ax.set_xlabel(r'classifier score ($-E(\theta)$)')
+    ax.set_ylabel("count")
+    ax.legend()
+    figure_name = ("energy_score_in_epoch_{}.jpg".format(i))
+    figure_path = os.path.join(path, figure_name)
+    fig.savefig(figure_path)
+    plt.close()
 
 
 if __name__ == "__main__":
-    train_path = './output/result_mini/LJSpeech\\train_loss.json'
-    val_path = './output/result_mini/LJSpeech\\valid_loss.json'
-    train_epoch, iter_list = draw_epoch_loss(train_path)
-    val_epoch, iter_list = draw_epoch_loss(val_path)
-    draw_loss_figures(train_epoch, val_epoch, iter_list, './output/result_mini/LJSpeech')
+    train_path = './output/result/LJSpeech\\train_loss.json'
+    val_path = './output/result/LJSpeech\\valid_loss.json'
+    output_path = './output/result/LJSpeech'
+
+    # load train and valid output from json file
+    train_epoch, iter_list, train_pos_energy, train_neg_energy = draw_epoch_loss(train_path)
+    val_epoch, iter_list, val_pos_energy, val_neg_energy = draw_epoch_loss(val_path)
+
+    # draw figure of epoch loss for train and valid output
+    draw_loss_figures(train_epoch, val_epoch, iter_list, output_path)
+
+    # draw figure of energy distribution for each epoch
+    # sys.setrecursionlimit(1500)
+    for i in iter_list:
+        draw_hist(train_pos_energy[i-1], train_neg_energy[i-1], i, output_path + '/train_energy/')
+        draw_hist(val_pos_energy[i-1], val_neg_energy[i-1], i, output_path + '/val_energy/')

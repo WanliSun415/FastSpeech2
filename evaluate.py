@@ -112,6 +112,8 @@ def validate(model, configs, epoch):
     Loss = ContrastiveRegressionLoss()
     # Evaluation
     loss_sums = [0 for _ in range(3)]
+    pos_energy = []
+    neg_energy = []
     for batchs, fake_batchs in zip(loader, fake_loader):
         for batch, fake_batch in zip(batchs, fake_batchs):
             batch = to_device(batch, device)
@@ -120,9 +122,9 @@ def validate(model, configs, epoch):
                 # Forward
                 output = model(*(batch))
                 fake_output = model(*(fake_batch))
-                # Cal Loss
-                # pos_losses = Loss(batch, output)
-                # NEG_losses = Loss(batch, output)
+
+                pos_energy += output[0].data.cpu().tolist()
+                neg_energy += fake_output[0].data.cpu().tolist()
 
                 loss_sums[0] += Loss(-output[0]).item()
                 loss_sums[1] += Loss(fake_output[0]).item()
@@ -132,7 +134,7 @@ def validate(model, configs, epoch):
 
     model.train()
     print("Validation average loss in epoch {}: {:9f}, positive loss: {:9f}, negative loss {:9f} ".format(epoch, loss_means[2], loss_means[0], loss_means[1]))
-    return loss_means
+    return loss_means, pos_energy, neg_energy
 
 
 if __name__ == "__main__":
