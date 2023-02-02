@@ -9,6 +9,7 @@ class ScheduledOptim:
 
         self._optimizer = torch.optim.Adam(
             model.parameters(),
+            lr=train_config["optimizer"]["lr"],
             betas=train_config["optimizer"]["betas"],
             eps=train_config["optimizer"]["eps"],
             weight_decay=train_config["optimizer"]["weight_decay"],
@@ -17,7 +18,7 @@ class ScheduledOptim:
         self.anneal_steps = train_config["optimizer"]["anneal_steps"]
         self.anneal_rate = train_config["optimizer"]["anneal_rate"]
         self.current_step = current_step
-        self.init_lr = np.power(model_config["transformer"]["encoder_hidden"], -0.5)
+        # self.init_lr = np.power(model_config["transformer"]["encoder_hidden"], -0.5)
 
     def step_and_update_lr(self):
         self._update_learning_rate()
