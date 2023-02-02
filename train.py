@@ -181,17 +181,17 @@ def main(args, configs):
                 #
                 #     model.train()
 
-                if step % save_step == 0:
-                    torch.save(
-                        {
-                            "model": model.module.state_dict(),
-                            "optimizer": optimizer._optimizer.state_dict(),
-                        },
-                        os.path.join(train_config["path"]["ckpt_path"], "{}.pth.tar".format(step),),
-                    )
-
-                if step == total_step:
-                    quit()
+                # if step % save_step == 0:
+                #     torch.save(
+                #         {
+                #             "model": model.module.state_dict(),
+                #             "optimizer": optimizer._optimizer.state_dict(),
+                #         },
+                #         os.path.join(train_config["path"]["ckpt_path"], "{}.pth.tar".format(step),),
+                #     )
+                #
+                # if step == total_step:
+                #     quit()
                 step += 1
                 outer_bar.update(1)
 
