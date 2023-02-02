@@ -99,11 +99,10 @@ EPS = 1e-8
 class ContrastiveRegressionLoss(nn.Module):
     def __init__(self):
         super(ContrastiveRegressionLoss, self).__init__()
-
+        self.loss_layer = nn.Sigmoid()
     def forward(self, model_outputs):
         # print("Pos Energy Value: %f, Neg Energy Value: %f" % (pos_energy.item(), torch.mean(neg_energy)))
-        loss_layer = nn.Sigmoid()
-        loss = loss_layer(model_outputs)
+        loss = self.loss_layer(model_outputs)
         loss = torch.log(loss + EPS)
         loss = torch.sum(loss)
         # print(loss_pos.item(), loss_neg.item())
