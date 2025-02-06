@@ -50,7 +50,8 @@ def get_vocoder(config, device):
             )
         elif speaker == "universal":
             vocoder = torch.hub.load(
-                "descriptinc/melgan-neurips", "load_melgan", "multi_speaker"
+                "descriptinc/melgan-neurips", "load_melgan", "multi_speaker", map_location=device
+
             )
         vocoder.mel2wav.eval()
         vocoder.mel2wav.to(device)
@@ -60,7 +61,7 @@ def get_vocoder(config, device):
         config = hifigan.AttrDict(config)
         vocoder = hifigan.Generator(config)
         if speaker == "LJSpeech":
-            ckpt = torch.load("hifigan/generator_LJSpeech.pth.tar")
+            ckpt = torch.load("hifigan/generator_LJSpeech.pth.tar", map_location=device)
         elif speaker == "universal":
             ckpt = torch.load("hifigan/generator_universal.pth.tar")
         vocoder.load_state_dict(ckpt["generator"])

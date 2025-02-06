@@ -11,6 +11,12 @@ from audio.audio_processing import (
     window_sumsquare,
 )
 
+if torch.backends.mps.is_available():
+    device = torch.device("mps")
+else:
+    device = torch.device('cuda:0')
+print('Using device: ', device)
+
 
 class STFT(torch.nn.Module):
     """adapted from Prem Seetharaman's https://github.com/pseeth/pytorch-stft"""
@@ -65,8 +71,8 @@ class STFT(torch.nn.Module):
         input_data = input_data.squeeze(1)
 
         forward_transform = F.conv1d(
-            input_data.cuda(),
-            torch.autograd.Variable(self.forward_basis, requires_grad=False).cuda(),
+            input_data.to(device),
+            torch.autograd.Variable(self.forward_basis, requires_grad=False).to(device),
             stride=self.hop_length,
             padding=0,
         ).cpu()

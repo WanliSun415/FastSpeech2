@@ -15,7 +15,11 @@ from dataset import Dataset
 
 from evaluate import evaluate
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+if torch.backends.mps.is_available():
+    device = torch.device("mps")
+else:
+    device = torch.device('cuda:0')
+print('Using device: ', device)
 
 
 def main(args, configs):
