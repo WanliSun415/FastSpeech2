@@ -177,7 +177,7 @@ def synth_samples(targets, predictions, vocoder, model_config, preprocess_config
         mel_prediction = predictions[1][i, :mel_len].detach().transpose(0, 1)
 
         temp = {}
-        temp[raw_texts[i]] = mel_prediction
+        temp[raw_texts[i]] = mel_prediction.data.clone()
         audio_name = os.path.join(path, "{}.wav".format(basename)) + '.pt'
         torch.save(temp, audio_name)
 
@@ -206,7 +206,7 @@ def synth_samples(targets, predictions, vocoder, model_config, preprocess_config
             stats,
             ["Synthetized Spectrogram"],
         )
-        plt.savefig(os.path.join(path, "{}.png".format(basename)))
+        # plt.savefig(os.path.join(path, "{}.png".format(basename)))
         plt.close()
 
     from .model import vocoder_infer
