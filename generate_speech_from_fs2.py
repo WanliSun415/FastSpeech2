@@ -92,6 +92,7 @@ def synthesize(model, step, configs, vocoder, batchs, control_values):
     preprocess_config, model_config, train_config = configs
     pitch_control, energy_control, duration_control = control_values
 
+    i = 0
     for batch in batchs:
         ids, raw_texts, speakers, texts, src_lens, max_src_len, durations = to_device(batch, device)
         with torch.no_grad():
@@ -111,7 +112,8 @@ def synthesize(model, step, configs, vocoder, batchs, control_values):
                 preprocess_config,
                 train_config["path"]["result_path"],
             )
-
+    i = i + 1
+    print(i, ids)
 
 if __name__ == "__main__":
 
