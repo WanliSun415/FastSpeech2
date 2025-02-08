@@ -42,6 +42,8 @@ class FastSpeech2(nn.Module):
 
     def forward(
         self,
+        ids,
+        raw_texts,
         speakers,
         texts,
         src_lens,

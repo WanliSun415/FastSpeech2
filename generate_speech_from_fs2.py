@@ -93,11 +93,12 @@ def synthesize(model, step, configs, vocoder, batchs, control_values):
     pitch_control, energy_control, duration_control = control_values
 
     for batch in batchs:
-        batch = to_device(batch, device)
+        ids, raw_texts, speakers, texts, src_lens, max_src_len, durations = to_device(batch, device)
         with torch.no_grad():
             # Forward
             output = model(
-                *(batch[2:]),
+                ids, raw_texts, speakers, texts, src_lens, max_src_len,
+                d_targets=durations,
                 p_control=pitch_control,
                 e_control=energy_control,
                 d_control=duration_control
@@ -200,7 +201,7 @@ if __name__ == "__main__":
         dataset = TextDataset(args.source, preprocess_config)
         batchs = DataLoader(
             dataset,
-            batch_size=8,
+            batch_size=2,
             collate_fn=dataset.collate_fn,
         )
     if args.mode == "single":

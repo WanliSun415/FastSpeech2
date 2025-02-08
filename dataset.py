@@ -159,7 +159,7 @@ class TextDataset(Dataset):
             )
         ) as f:
             self.speaker_map = json.load(f)
-
+        self.preprocessed_path = preprocess_config["path"]["preprocessed_path"]
     def __len__(self):
         return len(self.text)
 
@@ -169,8 +169,13 @@ class TextDataset(Dataset):
         speaker_id = self.speaker_map[speaker]
         raw_text = self.raw_text[idx]
         phone = np.array(text_to_sequence(self.text[idx], self.cleaners))
-
-        return (basename, speaker_id, phone, raw_text)
+        duration_path = os.path.join(
+            self.preprocessed_path,
+            "duration",
+            "{}-duration-{}.npy".format(speaker, basename),
+        )
+        duration = np.load(duration_path)
+        return (basename, speaker_id, phone, raw_text, duration)
 
     def process_meta(self, filename):
         with open(filename, "r", encoding="utf-8") as f:
@@ -192,10 +197,10 @@ class TextDataset(Dataset):
         texts = [d[2] for d in data]
         raw_texts = [d[3] for d in data]
         text_lens = np.array([text.shape[0] for text in texts])
-
+        durations = [d[4] for d in data]
         texts = pad_1D(texts)
-
-        return ids, raw_texts, speakers, texts, text_lens, max(text_lens)
+        durations = pad_1D(durations)
+        return (ids, raw_texts, speakers, texts, text_lens, max(text_lens), durations)
 
 
 if __name__ == "__main__":
