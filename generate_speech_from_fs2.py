@@ -112,8 +112,8 @@ def synthesize(model, step, configs, vocoder, batchs, control_values):
                 preprocess_config,
                 train_config["path"]["result_path"],
             )
-    i = i + 1
-    print(i, ids)
+        i = i + 1
+        print(i, ids)
 
 if __name__ == "__main__":
 
@@ -203,7 +203,7 @@ if __name__ == "__main__":
         dataset = TextDataset(args.source, preprocess_config)
         batchs = DataLoader(
             dataset,
-            batch_size=2,
+            batch_size=200,
             collate_fn=dataset.collate_fn,
         )
     if args.mode == "single":
