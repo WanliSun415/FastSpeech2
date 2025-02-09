@@ -92,6 +92,7 @@ def synthesize(model, step, configs, vocoder, batchs, control_values):
     preprocess_config, model_config, train_config = configs
     pitch_control, energy_control, duration_control = control_values
 
+    i = 0
     for batch in batchs:
         batch = to_device(batch, device)
         with torch.no_grad():
@@ -110,6 +111,9 @@ def synthesize(model, step, configs, vocoder, batchs, control_values):
                 preprocess_config,
                 train_config["path"]["result_path"],
             )
+        i = i+1
+        print(i, batch[0]) 
+
 
 
 if __name__ == "__main__":
@@ -200,7 +204,7 @@ if __name__ == "__main__":
         dataset = TextDataset(args.source, preprocess_config)
         batchs = DataLoader(
             dataset,
-            batch_size=8,
+            batch_size=100,
             collate_fn=dataset.collate_fn,
         )
     if args.mode == "single":
