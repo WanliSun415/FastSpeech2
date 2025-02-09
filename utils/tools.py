@@ -168,11 +168,18 @@ def synth_one_sample(targets, predictions, vocoder, model_config, preprocess_con
 def synth_samples(targets, predictions, vocoder, model_config, preprocess_config, path):
 
     basenames = targets[0]
+    raw_texts = targets[1]
     for i in range(len(predictions[0])):
         basename = basenames[i]
         src_len = predictions[8][i].item()
         mel_len = predictions[9][i].item()
         mel_prediction = predictions[1][i, :mel_len].detach().transpose(0, 1)
+
+        temp = {}
+        temp[raw_texts[i]] = mel_prediction.data.clone()
+        audio_name = os.path.join(path, "{}.wav".format(basename)) + '.pt'
+        torch.save(temp, audio_name)
+
         duration = predictions[5][i, :src_len].detach().cpu().numpy()
         if preprocess_config["preprocessing"]["pitch"]["feature"] == "phoneme_level":
             pitch = predictions[2][i, :src_len].detach().cpu().numpy()
@@ -198,7 +205,7 @@ def synth_samples(targets, predictions, vocoder, model_config, preprocess_config
             stats,
             ["Synthetized Spectrogram"],
         )
-        plt.savefig(os.path.join(path, "{}.png".format(basename)))
+        # plt.savefig(os.path.join(path, "{}.png".format(basename)))
         plt.close()
 
     from .model import vocoder_infer
