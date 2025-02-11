@@ -104,11 +104,17 @@ class Dataset(Dataset):
 
         speakers = np.array(speakers)
         texts = pad_1D(texts)
-        mels = pad_2D(mels)
+
+        max_len = max(mel_lens)
+        if max_len % 2:
+            max_len += 1
+
+        mels = pad_2D(mels, maxlen=max_len)
         pitches = pad_1D(pitches)
         energies = pad_1D(energies)
         durations = pad_1D(durations)
-
+        pos_mel = [np.arange(1, len + 1) for len in mel_lens]
+        pos_mel = pad_1D(pos_mel, maxlen=max_len)
         return (
             ids,
             raw_texts,
@@ -118,10 +124,11 @@ class Dataset(Dataset):
             max(text_lens),
             mels,
             mel_lens,
-            max(mel_lens),
+            max_len,
             pitches,
             energies,
             durations,
+            pos_mel
         )
 
     def collate_fn(self, data):

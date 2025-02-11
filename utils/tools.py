@@ -20,7 +20,7 @@ print('Using device: ', device)
 
 
 def to_device(data, device):
-    if len(data) == 12:
+    if len(data) == 13:
         (
             ids,
             raw_texts,
@@ -34,6 +34,7 @@ def to_device(data, device):
             pitches,
             energies,
             durations,
+            pos_mel
         ) = data
 
         speakers = torch.from_numpy(speakers).long().to(device)
@@ -44,6 +45,7 @@ def to_device(data, device):
         pitches = torch.from_numpy(pitches).float().to(device)
         energies = torch.from_numpy(energies).to(device)
         durations = torch.from_numpy(durations).long().to(device)
+        pos_mel = torch.from_numpy(pos_mel).to(device)
 
         return (
             ids,
@@ -58,6 +60,7 @@ def to_device(data, device):
             pitches,
             energies,
             durations,
+            pos_mel
         )
 
     if len(data) == 6:
@@ -266,15 +269,15 @@ def plot_mel(data, stats, titles):
     return fig
 
 
-def pad_1D(inputs, PAD=0):
+def pad_1D(inputs, PAD=0, maxlen=None):
     def pad_data(x, length, PAD):
         x_padded = np.pad(
             x, (0, length - x.shape[0]), mode="constant", constant_values=PAD
         )
         return x_padded
-
-    max_len = max((len(x) for x in inputs))
-    padded = np.stack([pad_data(x, max_len, PAD) for x in inputs])
+    if maxlen is None:
+        maxlen = max((len(x) for x in inputs))
+    padded = np.stack([pad_data(x, maxlen, PAD) for x in inputs])
 
     return padded
 

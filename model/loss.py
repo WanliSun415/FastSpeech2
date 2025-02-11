@@ -24,6 +24,7 @@ class FastSpeech2Loss(nn.Module):
             pitch_targets,
             energy_targets,
             duration_targets,
+            pos_mel
         ) = inputs[6:]
         (
             mel_predictions,
@@ -36,6 +37,8 @@ class FastSpeech2Loss(nn.Module):
             mel_masks,
             _,
             _,
+            ssm_loss1,
+            ssm_loss2,
         ) = predictions
         src_masks = ~src_masks
         mel_masks = ~mel_masks
@@ -79,7 +82,7 @@ class FastSpeech2Loss(nn.Module):
         duration_loss = self.mse_loss(log_duration_predictions, log_duration_targets)
 
         total_loss = (
-            mel_loss + postnet_mel_loss + duration_loss + pitch_loss + energy_loss
+            mel_loss + postnet_mel_loss + duration_loss + pitch_loss + energy_loss + ssm_loss1 + ssm_loss2
         )
 
         return (
@@ -89,4 +92,6 @@ class FastSpeech2Loss(nn.Module):
             pitch_loss,
             energy_loss,
             duration_loss,
+            ssm_loss1,
+            ssm_loss2
         )
