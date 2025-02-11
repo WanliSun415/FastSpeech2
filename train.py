@@ -12,8 +12,9 @@ from utils.model import get_model, get_vocoder, get_param_num
 from utils.tools import to_device, log, synth_one_sample
 from model import FastSpeech2Loss
 from dataset import Dataset
-
 from evaluate import evaluate
+import wandb
+
 
 if torch.backends.mps.is_available():
     device = torch.device("mps")
@@ -23,13 +24,15 @@ print('Using device: ', device)
 
 
 def main(args, configs):
+    wandb.init(project="joint-fs2-unet-mse&ssm"
+                       "")
     print("Prepare training ...")
 
     preprocess_config, model_config, train_config = configs
 
     # Get dataset
     dataset = Dataset(
-        "train.txt", preprocess_config, train_config, sort=True, drop_last=True
+        train_config["path"]['train_dataset'], preprocess_config, train_config, sort=True, drop_last=True
     )
     batch_size = train_config["optimizer"]["batch_size"]
     group_size = 4  # Set this larger than 1 to enable sorting in Dataset
@@ -92,6 +95,16 @@ def main(args, configs):
                 # Backward
                 total_loss = total_loss / grad_acc_step
                 total_loss.backward()
+
+                wandb.log({
+                    "total_loss": losses[0].item(),
+                    "mel_loss": losses[1].item(),
+                    "post_mel_loss": losses[2].item(),
+                    "pitch_loss": losses[3].item(),
+                    "energy_loss": losses[4].item(),
+                    "duration_loss": losses[5].item(),
+                    "ssm_loss1": losses[6].item(),
+                    "ssm_loss2": losses[7].item()})
                 if step % grad_acc_step == 0:
                     # Clipping gradients to avoid gradient explosion
                     nn.utils.clip_grad_norm_(model.parameters(), grad_clip_thresh)
@@ -103,7 +116,8 @@ def main(args, configs):
                 if step % log_step == 0:
                     losses = [l.item() for l in losses]
                     message1 = "Step {}/{}, ".format(step, total_step)
-                    message2 = "Total Loss: {:.4f}, Mel Loss: {:.4f}, Mel PostNet Loss: {:.4f}, Pitch Loss: {:.4f}, Energy Loss: {:.4f}, Duration Loss: {:.4f}".format(
+                    message2 = ("Total Loss: {:.4f}, Mel Loss: {:.4f}, Mel PostNet Loss: {:.4f}, Pitch Loss: {:.4f}, "
+                                "Energy Loss: {:.4f}, Duration Loss: {:.4f}, SSM1: {:.4f}, SSM2: {:.4f}").format(
                         *losses
                     )
 
@@ -114,43 +128,43 @@ def main(args, configs):
 
                     log(train_logger, step, losses=losses)
 
-                if step % synth_step == 0:
-                    fig, wav_reconstruction, wav_prediction, tag = synth_one_sample(
-                        batch,
-                        output,
-                        vocoder,
-                        model_config,
-                        preprocess_config,
-                    )
-                    log(
-                        train_logger,
-                        fig=fig,
-                        tag="Training/step_{}_{}".format(step, tag),
-                    )
-                    sampling_rate = preprocess_config["preprocessing"]["audio"][
-                        "sampling_rate"
-                    ]
-                    log(
-                        train_logger,
-                        audio=wav_reconstruction,
-                        sampling_rate=sampling_rate,
-                        tag="Training/step_{}_{}_reconstructed".format(step, tag),
-                    )
-                    log(
-                        train_logger,
-                        audio=wav_prediction,
-                        sampling_rate=sampling_rate,
-                        tag="Training/step_{}_{}_synthesized".format(step, tag),
-                    )
+                # if step % synth_step == 0:
+                #     fig, wav_reconstruction, wav_prediction, tag = synth_one_sample(
+                #         batch,
+                #         output,
+                #         vocoder,
+                #         model_config,
+                #         preprocess_config,
+                #     )
+                #     log(
+                #         train_logger,
+                #         fig=fig,
+                #         tag="Training/step_{}_{}".format(step, tag),
+                #     )
+                #     sampling_rate = preprocess_config["preprocessing"]["audio"][
+                #         "sampling_rate"
+                #     ]
+                #     log(
+                #         train_logger,
+                #         audio=wav_reconstruction,
+                #         sampling_rate=sampling_rate,
+                #         tag="Training/step_{}_{}_reconstructed".format(step, tag),
+                #     )
+                #     log(
+                #         train_logger,
+                #         audio=wav_prediction,
+                #         sampling_rate=sampling_rate,
+                #         tag="Training/step_{}_{}_synthesized".format(step, tag),
+                #     )
 
-                if step % val_step == 0:
-                    model.eval()
-                    message = evaluate(model, step, configs, val_logger, vocoder)
-                    with open(os.path.join(val_log_path, "log.txt"), "a") as f:
-                        f.write(message + "\n")
-                    outer_bar.write(message)
-
-                    model.train()
+                # if step % val_step == 0:
+                #     model.eval()
+                #     message = evaluate(model, step, configs, val_logger, vocoder)
+                #     with open(os.path.join(val_log_path, "log.txt"), "a") as f:
+                #         f.write(message + "\n")
+                #     outer_bar.write(message)
+                #
+                #     model.train()
 
                 if step % save_step == 0:
                     torch.save(
