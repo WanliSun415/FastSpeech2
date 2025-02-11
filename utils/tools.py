@@ -177,7 +177,7 @@ def synth_samples(targets, predictions, vocoder, model_config, preprocess_config
         mel_prediction = predictions[1][i, :mel_len].detach().transpose(0, 1)
 
         temp = {}
-        temp[raw_texts[i]] = mel_prediction.data.clone()
+        temp[raw_texts[i]] = mel_prediction.data.clone().cpu()
         audio_name = os.path.join(path, "{}.wav".format(basename)) + '.pt'
         torch.save(temp, audio_name)
 
