@@ -2,8 +2,8 @@ path:
   ckpt_path: "./output/ckpt/LJSpeech"
   log_path: "./output/log/LJSpeech"
   result_path: "./output/result/LJSpeech"
-  train_dataset: "./preprocessed_data/LJSpeech/train_10000.txt"
-  val_dataset: "./preprocessed_data/LJSpeech/val_1800.txt"
+  train_dataset: "train_10000.txt"
+  val_dataset: "val_1800.txt"
 optimizer:
   batch_size: 2
   betas: [0.9, 0.98]
