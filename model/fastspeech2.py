@@ -150,5 +150,6 @@ class FastSpeech2(nn.Module):
             src_lens,
             mel_lens,
             loss1,
-            loss2
+            loss2,
+            logits
         )

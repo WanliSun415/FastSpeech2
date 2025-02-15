@@ -1,6 +1,5 @@
 import argparse
 import os
-
 import torch
 import yaml
 import torch.nn as nn
@@ -97,14 +96,14 @@ def main(args, configs):
                 total_loss.backward()
 
                 wandb.log({
-                    "total_loss": losses[0].item(),
-                    "mel_loss": losses[1].item(),
-                    "post_mel_loss": losses[2].item(),
-                    "pitch_loss": losses[3].item(),
-                    "energy_loss": losses[4].item(),
-                    "duration_loss": losses[5].item(),
-                    "ssm_loss1": losses[6].item(),
-                    "ssm_loss2": losses[7].item()})
+                    "train/total_loss": losses[0].item(),
+                    "train/mel_loss": losses[1].item(),
+                    "train/post_mel_loss": losses[2].item(),
+                    "train/pitch_loss": losses[3].item(),
+                    "train/energy_loss": losses[4].item(),
+                    "train/duration_loss": losses[5].item(),
+                    "train/ssm_loss1": losses[6].item(),
+                    "train/ssm_loss2": losses[7].item()})
                 if step % grad_acc_step == 0:
                     # Clipping gradients to avoid gradient explosion
                     nn.utils.clip_grad_norm_(model.parameters(), grad_clip_thresh)
@@ -157,14 +156,14 @@ def main(args, configs):
                 #         tag="Training/step_{}_{}_synthesized".format(step, tag),
                 #     )
 
-                # if step % val_step == 0:
-                #     model.eval()
-                #     message = evaluate(model, step, configs, val_logger, vocoder)
-                #     with open(os.path.join(val_log_path, "log.txt"), "a") as f:
-                #         f.write(message + "\n")
-                #     outer_bar.write(message)
-                #
-                #     model.train()
+                if step % val_step == 0:
+                    model.eval()
+                    message = evaluate(model, step, configs, val_logger, vocoder, infer_step=10)
+                    with open(os.path.join(val_log_path, "log.txt"), "a") as f:
+                        f.write(message + "\n")
+                    outer_bar.write(message)
+
+                    model.train()
 
                 if step % save_step == 0:
                     torch.save(

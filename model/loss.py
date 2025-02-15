@@ -39,6 +39,7 @@ class FastSpeech2Loss(nn.Module):
             _,
             ssm_loss1,
             ssm_loss2,
+            logits
         ) = predictions
         src_masks = ~src_masks
         mel_masks = ~mel_masks
