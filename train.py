@@ -23,8 +23,7 @@ print('Using device: ', device)
 
 
 def main(args, configs):
-    wandb.init(project="joint-fs2-unet-mse&ssm"
-                       "")
+    wandb.init(project="joint-fs2-unet-mse&delta")
     print("Prepare training ...")
 
     preprocess_config, model_config, train_config = configs
