@@ -84,7 +84,7 @@ class FastSpeech2Loss(nn.Module):
         logits = logits.masked_select(mel_masks.unsqueeze(-1))
         delta_loss = nn.MSELoss()(logits, postnet_mel_predictions - mel_targets)
         total_loss = (
-            mel_loss + postnet_mel_loss + duration_loss + pitch_loss + energy_loss + ssm_loss1 + ssm_loss2
+            mel_loss + postnet_mel_loss + duration_loss + pitch_loss + energy_loss + delta_loss
         )
 
         return (
