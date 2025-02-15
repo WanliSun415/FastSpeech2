@@ -111,6 +111,7 @@ def evaluate(model, step, configs, logger=None, vocoder=None, infer_step=0):
         "val_epoch/duration_loss": losses[5].item(),
         "val_epoch/ssm_loss1": losses[6].item(),
         "val_epoch/ssm_loss2": losses[7].item(),
+        "val_epoch/delta_loss": losses[8].item(),
         "val_epoch/mel_spectrogram": fig,
         "val_epoch/mel_to_vocoder_wav": wandb.Audio(wav_reconstruction, caption=batch[0][0], sample_rate=sampling_rate),
         "val_epoch/post_net_wav": wandb.Audio(wav_prediction, caption=batch[0][0], sample_rate=sampling_rate),
