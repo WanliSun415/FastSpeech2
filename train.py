@@ -103,7 +103,8 @@ def main(args, configs):
                     "train/energy_loss": losses[4].item(),
                     "train/duration_loss": losses[5].item(),
                     "train/ssm_loss1": losses[6].item(),
-                    "train/ssm_loss2": losses[7].item()})
+                    "train/ssm_loss2": losses[7].item(),
+                    "train/delta": losses[8].item()})
                 if step % grad_acc_step == 0:
                     # Clipping gradients to avoid gradient explosion
                     nn.utils.clip_grad_norm_(model.parameters(), grad_clip_thresh)

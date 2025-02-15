@@ -57,7 +57,7 @@ def evaluate(model, step, configs, logger=None, vocoder=None, infer_step=0):
     loss_means = [loss_sum / len(dataset) for loss_sum in loss_sums]
 
     message = ("Validation Step {}, Total Loss: {:.4f}, Mel Loss: {:.4f}, Mel PostNet Loss: {:.4f}, Pitch Loss: {:.4f}, "
-               "Energy Loss: {:.4f}, Duration Loss: {:.4f}, SSM1 Loss: {:.4f}, SSM2 Loss: {:.4f}").format(
+               "Energy Loss: {:.4f}, Duration Loss: {:.4f}, SSM1 Loss: {:.4f}, SSM2 Loss: {:.4f}, Delta: {:.4f}").format(
         *([step] + [l for l in loss_means])
     )
 
